@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Template Mo">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+
+    <title>Histogram</title>
+<!--
+
+Histogram
+
+https://templatemo.com/tm-537-art-factory
+
+-->
+    <!-- Additional CSS Files -->
+    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/font-awesome.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/templatemo-art-factory.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/owl-carousel.css">
+
+    </head>
+    
+    <body>
+    
+    <!-- ***** Preloader Start ***** -->
+    <div id="preloader">
+        <div class="jumper">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>  
+    <!-- ***** Preloader End ***** -->
+    <!-- ***** Welcome Area Start ***** -->
+    <div class="welcome-area" id="welcome">
+
+        <!-- ***** Header Text Start ***** -->
+        <div class="header-text">
+            <div class="container">
+                <div class="row">
+                    <div class="left-text col-lg-6 col-md-6 col-sm-12 col-xs-12" data-scroll-reveal="enter left move 30px over 0.6s after 0.4s">
+                        <h1><strong>Histogram</strong></h1>
+                        <p>A histogram takes as input a numeric variable only. 
+						The variable is cut into several bins, and the number of observation per bin is represented by the height of the bar. 
+						It is possible to represent the distribution of several variable on the same axis using this technique.</p>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12" data-scroll-reveal="enter right move 30px over 0.6s after 0.4s">
+                        <img src="assets/images/right-image.png">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ***** Header Text End ***** -->
+    </div>
+    <!-- ***** Welcome Area End ***** -->
+
+
+    <!-- ***** Features Big Item Start ***** -->
+    <section class="section" id="about">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-7 col-md-12 col-sm-12" data-scroll-reveal="enter left move 30px over 0.6s after 0.4s">
+							<!-- Load d3.js -->
+							<script src="https://d3js.org/d3.v4.js"></script>
+							
+							<h3>Quantity Bin Size</h3>
+							<p>Change Bins Number Accordingly</p>
+							<!-- Create a div where the graph will take place -->
+							<div id="histogram"></div>
+
+							<p><font size="5">
+							  <label>Bins:</label>
+							  <input type="number" min="1" max="14" value="10" placeholder="Enter Value" id="nBin"style="width:200px; height:65px; color:#EA6767;" maxlength="2" >
+							</font></p>
+							<script>
+
+							// set the dimensions and margins of the graph
+							var margin = {top: 10, right: 30, bottom: 30, left: 40},
+								width = 460 - margin.left - margin.right,
+								height = 400 - margin.top - margin.bottom;
+
+							// append the svg object to the body of the page
+							var svg = d3.select("#histogram")
+							  .append("svg")
+								.attr("width", width + margin.left + margin.right)
+								.attr("height", height + margin.top + margin.bottom)
+							  .append("g")
+								.attr("transform",
+									  "translate(" + margin.left + "," + margin.top + ")");
+
+							// get the data
+							d3.csv("excel/histogram.csv", function(data) {
+
+							  // X axis: scale and draw:
+							  var x = d3.scaleLinear()
+								  .domain([0, 15])     // can use this instead of 1000 to have the max of data: d3.max(data, function(d) { return +d.Quantity })
+								  .range([0, width]);
+							  svg.append("g")
+								  .attr("transform", "translate(0," + height + ")")
+								  .call(d3.axisBottom(x));
+
+							  // Y axis: initialization
+							  var y = d3.scaleLinear()
+								  .range([height, 0]);
+							  var yAxis = svg.append("g")
+
+							  // A function that builds the graph for a specific value of bin
+							  function update(nBin) {
+
+								// set the parameters for the histogram
+								var histogram = d3.histogram()
+									.value(function(d) { return d.Quantity; })   // I need to give the vector of value
+									.domain(x.domain())  // then the domain of the graphic
+									.thresholds(x.ticks(nBin)); // then the numbers of bins
+
+								// And apply this function to data to get the bins
+								var bins = histogram(data);
+
+								// Y axis: update now that we know the domain
+								y.domain([0, d3.max(bins, function(d) { return d.length; })]);   // d3.hist has to be called before the Y axis obviously
+								yAxis
+									.transition()
+									.duration(1000)
+									.call(d3.axisLeft(y));
+
+								// Join the rect with the bins data
+								var u = svg.selectAll("rect")
+									.data(bins)
+
+								// Manage the existing bars and eventually the new ones:
+								u
+									.enter()
+									.append("rect") // Add a new rect for each new elements
+									.merge(u) // get the already existing elements as well
+									.transition() // and apply changes to all of them
+									.duration(1000)
+									  .attr("x", 1)
+									  .attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
+									  .attr("width", function(d) { return x(d.x1) - x(d.x0) -1 ; })
+									  .attr("height", function(d) { return height - y(d.length); })
+									  .style("fill", "#00b4c6")
+
+
+								// If less bar in the new histogram, delete the ones not in use anymore
+								u
+									.exit()
+									.remove()
+								}
+
+
+							  // Initialize with 5 bins
+							  update(5)
+
+
+							  // Listen to the button -> update if user change it
+							  d3.select("#nBin").on("input", function() {
+								update(+this.value);
+							  });
+
+							});
+							</script>
+                </div>
+                <div class="right-text col-lg-5 col-md-12 col-sm-12 mobile-top-fix">
+                    <div class="left-heading">
+                        <h5>Example</h5>
+                    </div>
+                    <div class="left-text">
+                        <p>In this histogram, different categories of quantity shipped to customers are broken down into bin size.
+						<br />In most bin sizes, we can see that this company shipped about 2 to 4 items per customers. 
+						<br />This can be useful for marketing departments which can use this piece of information and use it to come out with ways to 
+						target the market by offering discounts to customers who shipped 2 or more items.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="hr"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- ***** Features Big Item End ***** -->
+    <!-- ***** Features Small Start ***** -->
+    <section class="section" id="services">
+	
+        <div class="container">
+		<h1>Implementing in Mathematics</h1>
+		<br />
+		<br />
+		<br />
+            <div class="row">
+                <div class="owl-carousel owl-theme">
+                    <div class="item service-item">
+                        <div class="icon">
+                            <i><img src="assets/images/service-icon-02.png" alt=""></i>
+                        </div>
+                        <h5 class="service-title">Test Scores</h5>
+                        <p>Frequency of entire cohort<br /> test/examination scores 
+						</p>
+                    </div>
+                    <div class="item service-item">
+                        <div class="icon">
+                            <i><img src="assets/images/service-icon-03.png" alt=""></i>
+                        </div>
+                        <h5 class="service-title">Time Taken</h5>
+                        <p>Frequency of time for students used<br /> to finish the test
+						</p>
+						
+                    </div>
+					
+					<div class="item service-item">
+                        <div class="icon">
+                            <i><img src="assets/images/service-icon-01.png" alt=""></i>
+                        </div>
+                        <h5 class="service-title">Questions</h5>
+                        <p>Example:
+						<i>'Base on the histogram shown, 
+						find the frequency of a student height'</i>
+						</p>
+						
+                    </div>
+	
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- jQuery -->
+    <script src="assets/js/jquery-2.1.0.min.js"></script>
+
+    <!-- Bootstrap -->
+    <script src="assets/js/popper.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+
+    <!-- Plugins -->
+    <script src="assets/js/owl-carousel.js"></script>
+    <script src="assets/js/scrollreveal.min.js"></script>
+    <script src="assets/js/waypoints.min.js"></script>
+    <script src="assets/js/jquery.counterup.min.js"></script>
+    <script src="assets/js/imgfix.min.js"></script> 
+    
+    <!-- Global Init -->
+    <script src="assets/js/custom.js"></script>
+
+  </body>
+</html>
